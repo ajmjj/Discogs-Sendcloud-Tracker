@@ -1,19 +1,26 @@
-import { getSingleOrderFromDiscogs } from "./scripts/discogs.js";
+import { 
+    getSingleOrderFromDiscogs,
+    getAllDiscogsOrders,
+} from "./scripts/discogs.js";
+
 import { 
     addOrderToStorage,
-    getSingleOrderFromStorage
+    getSingleOrderFromStorage,
+    getAllOrdersFromStorage,
 } from "./scripts/storage.js";
+
 import { 
     getSendcloudTracking, 
-    updateOrderTracking 
+    updateOrderTracking,
+    updateOrderStatus,
 } from "./scripts/sendcloud.js";
 
 
 // Listener for single order page
 chrome.runtime.onConnect.addListener(function(port) {
-    console.assert(port.name === "singleOrder");
+    console.assert(port.name === "messagingPort");
     port.onMessage.addListener(function(msg) {
-        if (msg.title === "orderIdFromDiscogs") {
+        if (msg.title === "singleOrderIdFromDiscogs") {
             // console.log("Received message:", msg); //debug
             const orderId = msg.orderId;
             (async () => {
@@ -39,7 +46,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                         // Add order to storage
                         let added = await addOrderToStorage(order, trackingResult);
                         if (added) {
-                            const message = {title: "orderFromStorage", order: order};
+                            const message = {title: "singleOrderFromStorage", order: order};
                             // console.log("Sending message:", message); //debug
                             port.postMessage(message);
                         // } else {
@@ -51,36 +58,74 @@ chrome.runtime.onConnect.addListener(function(port) {
                     } else {
                         console.log("Error getting tracking result from Sendcloud API");
                     }
-                } else {
+                } else { // If order already in storage
+                    // If status is not delivered, call sendcloud API 
                     // console.log("Order already in storage:", orderFromStorage); //debug
-                    const message = {title: "orderFromStorage", order: orderFromStorage};
+                    const message = {title: "singleOrderFromStorage", order: orderFromStorage};
                     // console.log("Sending message:", message); //debug
                     port.postMessage(message);
                 }
             })();
+        } 
+        
+        if (msg.title === "allOrderIdsFromDiscogs") {
+            console.log("Received message:", msg); //debug
+            const orderIds = msg.orderIds;
+            (async () => {
+                // Get all orders from storage
+                const allOrdersFromStorage = await getAllOrdersFromStorage(orderIds);
+
+                // Get active sort from page
+                const sort = msg.sort;
+                // Get all Discogs Orders on page from API
+                const allDiscogsOrders = await getAllDiscogsOrders(sort);
+
+                let finalOrders = [];
+                // For each order ID:
+                for (let order of allDiscogsOrders) {
+                    // Get order from storage by orderId
+                    const orderFromStorage = allOrdersFromStorage[order.id];
+                    // If order not in storage
+                    if (!orderFromStorage) {
+                        // Call sendcloud API with tracking number
+                        const trackingResult = await getSendcloudTracking(order.trackingNumber);
+                        if (trackingResult) {
+                            // Add tracking result to order
+                            order = updateOrderTracking(order, trackingResult);
+                        }
+                        // Add order to storage
+                        let added = await addOrderToStorage(order, trackingResult);
+                        if (added) {
+                            finalOrders.push(order);
+                        } else {
+                            console.log("Error adding order to storage");
+                        }
+                    } else { // Else if order in storage                        
+                        // If status is not delivered, call sendcloud API
+                        if (order.status !== "Delivered") {
+                            // Call sendcloud API with tracking number
+                            const trackingResult = await getSendcloudTracking(order.trackingNumber);
+                            console.log("Tracking result from Sendcloud API:", trackingResult); //debug
+                            if (trackingResult) {
+                                // Add tracking result to order
+                                order = updateOrderStatus(order, trackingResult);
+                            } else {
+                                console.log("Error getting tracking result from Sendcloud API");
+                            }
+                            // Add order to storage
+                            let added = await addOrderToStorage(order, trackingResult);
+                            if (added) {
+                                finalOrders.push(order);
+                            } else {
+                                console.log("Error adding order to storage");
+                            }
+                        }
+                    }
+                }    
+                const message = {title: "allOrdersFromStorage", orders: finalOrders};
+                console.log("Sending message:", message); //debug
+                port.postMessage(message);
+            })();
         }
     });
 });
-
-
-// if (location === 'singleOrder'){
-
-    
-//     } else {
-//         // If order in storage, check if status is delivered
-//         let status = getStatusFromOrder(order);
-//         if (status === 'delivered') {
-//             // If status is delivered, show tracking status on page
-//             showTrackingStatusOnPage(order);
-//         } else {
-//             // If status is not delivered, call sendcloud API
-//             trackingResult = await getSendcloudTracking(orderId);
-//             // Add tracking result to storage
-//             await addTrackingToStorage(orderId, trackingResult);
-//             // Show tracking status on page
-//             showTrackingStatusOnPage(order);
-//         }
-//     }
-// } else if (location === 'allOrders') {
-
-// }

@@ -46,8 +46,15 @@ function updateOrderTracking (order, trackingResult) {
     return order;
 }
 
+function updateOrderStatus (order, trackingResult) {
+    order.status = trackingResult.statuses.pop().carrier_message;
+    order.expectedDelivery = trackingResult.expected_delivery_date;
+    return order;
+}
+
 
 export { 
     getSendcloudTracking, 
-    updateOrderTracking 
+    updateOrderTracking,
+    updateOrderStatus
 };

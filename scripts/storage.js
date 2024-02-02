@@ -1,5 +1,5 @@
 
-async function getAllOrdersFromStorage () {
+async function getAllOrdersFromStorage (orderIds) {
     var getOrders  = new Promise( function(resolve, reject) {
         chrome.storage.sync.get('orders', function(result) {
             // console.log('orders from storage:', result.orders); //debug
@@ -14,7 +14,13 @@ async function getAllOrdersFromStorage () {
         console.log('No orders in storage');
         return {}; // Return empty object if orders is undefined or empty object if orders is undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined
     }
-    return orders;
+    // If orderIds is defined
+    // Filter orders by orderIds
+    let filteredOrders = [];
+    for (let orderId in orders) {
+        filteredOrders.push(orders[orderId]);
+    }
+    return filteredOrders;
 }
 
 async function addOrderToStorage (order) {
@@ -42,4 +48,5 @@ async function getSingleOrderFromStorage(orderId) {
 export {
     addOrderToStorage,
     getSingleOrderFromStorage,
+    getAllOrdersFromStorage
 };
