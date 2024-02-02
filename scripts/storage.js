@@ -1,8 +1,8 @@
 
 async function getAllOrdersFromStorage () {
     var getOrders  = new Promise( function(resolve, reject) {
-        chrome.storage.sync.get('orders', function(result) {
-            resolve(result.orders);
+        chrome.storage.sync.get(function(result) {
+            resolve(result);
         })
     });
     // Get orders from storage
@@ -12,25 +12,24 @@ async function getAllOrdersFromStorage () {
         console.log('No orders in storage');
         return {}; // Return empty object if orders is undefined, null or empty object
     }
+    console.log('Orders in storage:', ordersInStorage)
     return ordersInStorage;
 }
 
-async function addOrderToStorage (order) {
-    var orders = await getAllOrdersFromStorage();
-    // Add order to storage object
-    orders[order.orderId] = order;
-    console.log('updated orders:', orders);
-    // Save orders to storage
-    chrome.storage.sync.set({'orders': orders}, function() {
-        console.log('Order added to storage');
+async function addSingleOrderToStorage (order) {
+    chrome.storage.sync.set({[order.orderId]: order}, function() {
     });
     return true; 
 }
 
 async function getSingleOrderFromStorage(orderId) {
+    var getOrders  = new Promise( function(resolve, reject) {
+        chrome.storage.sync.get(orderId, function(result) {
+            resolve(result[orderId]);
+        })
+    });
     // Get orders from storage
-    var orders = await getAllOrdersFromStorage();
-    var order = orders[orderId];
+    var order = await getOrders;
     return order;
 }
 
@@ -55,7 +54,7 @@ async function getAllOrders(orderIds) {
 }
 
 export {
-    addOrderToStorage,
+    addSingleOrderToStorage,
     getSingleOrderFromStorage,
     getAllOrdersFromStorage,
     getAllOrders

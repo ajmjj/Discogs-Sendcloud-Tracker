@@ -168,20 +168,19 @@ const getShowCount = (document) => {
 
 // Main function
 document.body.onload = async function () {
-    let button = renderSyncButton(document);
     let location = checkLocation();
     // Connect to the background script
     port = chrome.runtime.connect({name: 'messagingPort'});
     
     if (location === 'singleOrder'){
-
+        
         // Get the order ID from the URL
         const orderId = getSingleOrderId();
         // console.log(orderId) //debug
         
         // Send 'singleOrder' with order ID to the background script
         port.postMessage({title: 'singleOrderIdFromDiscogs', orderId: orderId});
-
+        
         // Listen for a message from the background script
         port.onMessage.addListener(function(message) {
             // console.log(message); //debug
@@ -192,8 +191,9 @@ document.body.onload = async function () {
                 updatePillContent(pill, order);
             }
         })
-
+        
     } else if (location === 'allOrders') {
+        let button = renderSyncButton(document);
         // Get order IDs from the page
         const orderIds = getOrderIdsFromPage(document);
         port.postMessage({title:'getAllOrdersOnPage', orderIds: orderIds})
@@ -210,16 +210,22 @@ document.body.onload = async function () {
                 }
             }
         })
+
+        button.onclick = function() {
+            const sort = getSort(document);
+            const pageNumber = getPageNumber(document);
+            const showCount = getShowCount(document);
+            console.log(sort, pageNumber, showCount); //debug
+            port.postMessage({title: 'syncOrderTracking', sort: sort, pageNumber: pageNumber, showCount: showCount});
+        };
+        port.onMessage.addListener(function(message) {
+            if (message.title === 'syncedOrders') {
+                console.log('Orders synced');
+                // reload the page
+                location.reload();
+            }
+        })
     }
 
-    button.onclick = function() {
-        port.postMessage({title: 'syncOrderTracking', sort: getSort(document), pageNumber: getPageNumber(document), showCount: getShowCount(document)});
-    };
-    port.onMessage.addListener(function(message) {
-        if (message.title === 'syncedOrders') {
-            console.log('Orders synced');
-            // reload the page
-            location.reload();
-        }
-    })
+    
 }
