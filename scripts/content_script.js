@@ -8,11 +8,22 @@
 //     setPillLink
 // } from "../scripts/dom_manipulation.js";
 
+const renderSyncButton = (document) => {
+    const target = document.querySelector('thead').querySelector('.sr-only').parentElement;
+    const button = document.createElement('button');
+    button.id= 'TrackingSyncButton';
+    button.innerHTML = 'Sync';
+    button.style.backgroundColor = 'green';
+    button.style.color = 'white';
+    button.type = 'button';
+    target.appendChild(button);
+    return button
+}
+
 const getSingleOrderId = () => {
     let location = window.location.href;
     return location.split('/').pop();
 }
-
 const matchTrackingColor = (status) => {
     if (status && status.toLowerCase().includes('delivered')) {
         return {light: '#e5ffe8', dark: '#004d09'};
@@ -42,7 +53,6 @@ const checkLocation = () => {
         return false;
     }
 }
-
 // Get order IDs from /orders/ page
 const getOrderIdsFromPage = (document) => {
     const ordersTableBody = document.querySelector('.marketplace-table > tbody');
@@ -80,7 +90,6 @@ const setPillIconAndMessage = (pill, order) => {
         pill.innerHTML = `${icon} ${status}`;
     }
 }
-
 const setPillToolTip = (pill, order) => {
     const date = order.expectedDelivery;
     pill.title = `Expected Delivery: ${date}`;
@@ -149,18 +158,17 @@ const getSort = (document) => {
             return false;
     }
 }
-// const getPageNumber = (document) => {
-//     var pageNumbers = document.querySelector('.pagination_page_links');
-//     return pageNumbers.querySelector('strong').innerText;
-// }
-// const getShowCount = (document) => {
-//     return document.querySelector('#limit_top > option[selected]').value;
-// }
+const getPageNumber = (document) => {
+    var pageNumbers = document.querySelector('.pagination_page_links');
+    return pageNumbers.querySelector('strong').innerText;
+}
+const getShowCount = (document) => {
+    return document.querySelector('#limit_top > option[selected]').value;
+}
 
 // Main function
-
 document.body.onload = async function () {
-    renderSyncButton(document);
+    let button = renderSyncButton(document);
     let location = checkLocation();
     // Connect to the background script
     port = chrome.runtime.connect({name: 'messagingPort'});
@@ -186,6 +194,8 @@ document.body.onload = async function () {
         })
 
     } else if (location === 'allOrders') {
+        // Get order IDs from the page
+        const orderIds = getOrderIdsFromPage(document);
         port.postMessage({title:'getAllOrdersOnPage', orderIds: orderIds})
         // console.log("Sent orderIds to background script"); //debug
 
@@ -202,5 +212,14 @@ document.body.onload = async function () {
         })
     }
 
-    if 
+    button.onclick = function() {
+        port.postMessage({title: 'syncOrderTracking', sort: getSort(document), pageNumber: getPageNumber(document), showCount: getShowCount(document)});
+    };
+    port.onMessage.addListener(function(message) {
+        if (message.title === 'syncedOrders') {
+            console.log('Orders synced');
+            // reload the page
+            location.reload();
+        }
+    })
 }
