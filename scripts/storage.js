@@ -1,52 +1,62 @@
 
-async function getAllOrdersFromStorage (orderIds) {
+async function getAllOrdersFromStorage () {
     var getOrders  = new Promise( function(resolve, reject) {
         chrome.storage.sync.get('orders', function(result) {
-            // console.log('orders from storage:', result.orders); //debug
-            // Get orders from result
             resolve(result.orders);
         })
     });
     // Get orders from storage
-    var orders = await getOrders;
+    var ordersInStorage = await getOrders;
     // Check if orders is undefined
-    if (!orders) {
+    if (ordersInStorage === undefined || ordersInStorage === null || ordersInStorage.length === 0 ) {
         console.log('No orders in storage');
-        return {}; // Return empty object if orders is undefined or empty object if orders is undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined or null or undefined
+        return {}; // Return empty object if orders is undefined, null or empty object
     }
-    // If orderIds is defined
-    // Filter orders by orderIds
-    let filteredOrders = [];
-    for (let orderId in orders) {
-        filteredOrders.push(orders[orderId]);
-    }
-    return filteredOrders;
+    return ordersInStorage;
 }
 
 async function addOrderToStorage (order) {
-    // Get orders from storage
     var orders = await getAllOrdersFromStorage();
     // Add order to storage object
     orders[order.orderId] = order;
     console.log('updated orders:', orders);
     // Save orders to storage
-    chrome.storage.sync.set({orders: orders}, function() {
+    chrome.storage.sync.set({'orders': orders}, function() {
         console.log('Order added to storage');
     });
-    return true; // Return true if order is added to storage
+    return true; 
 }
 
 async function getSingleOrderFromStorage(orderId) {
     // Get orders from storage
     var orders = await getAllOrdersFromStorage();
-    // Get order from orders object
     var order = orders[orderId];
-    // console.log('Order from storage:', order);
     return order;
+}
+
+async function getAllOrders(orderIds) {
+    var orders = await getAllOrdersFromStorage();
+    let allOrders = [];
+    for (let orderId of orderIds) {
+        if (orders[orderId]) {
+            allOrders.push(orders[orderId]);
+        } else {
+            allOrders.push({
+                orderId: orderId,
+                status: 'Not synced',
+                trackingNumber: "No tracking number",
+                expectedDelivery: "Not synced",
+                trackingUrl: "Not synced",
+            })
+        }
+    }
+
+    return allOrders;
 }
 
 export {
     addOrderToStorage,
     getSingleOrderFromStorage,
-    getAllOrdersFromStorage
-};
+    getAllOrdersFromStorage,
+    getAllOrders
+}

@@ -7,6 +7,7 @@ import {
     addOrderToStorage,
     getSingleOrderFromStorage,
     getAllOrdersFromStorage,
+    getAllOrders,
 } from "./scripts/storage.js";
 
 import { 
@@ -48,11 +49,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                         if (added) {
                             const message = {title: "singleOrderFromStorage", order: order};
                             // console.log("Sending message:", message); //debug
-                            port.postMessage(message);
-                        // } else {
-                        //     console.log("Error adding order to storage");
-                        //     const message = {title: "failedToAddOrder", order: order};
-                        //     console.log("Sending message:", message); //debug
+                        port.postMessage(message);
                         }
                         
                     } else {
@@ -123,6 +120,19 @@ chrome.runtime.onConnect.addListener(function(port) {
                     }
                 }    
                 const message = {title: "allOrdersFromStorage", orders: finalOrders};
+                console.log("Sending message:", message); //debug
+                port.postMessage(message);
+            })();
+        }
+
+        if (msg.title === 'getAllOrdersOnPage') {
+            console.log("Received message:", msg); //debug
+            const orderIds = msg.orderIds;
+            (async () => {
+                // Get full order list from page
+                const allOrders = await getAllOrders(orderIds);
+
+                const message = {title: "allOrdersOnPage", orders: allOrders};
                 console.log("Sending message:", message); //debug
                 port.postMessage(message);
             })();

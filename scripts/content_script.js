@@ -58,7 +58,6 @@ const getOrderIdsFromPage = (document) => {
     }
     return orderIds;
 }
-
 // Pill manipulation
 const getPillElement = (document) => {
     const parentDiv = document.querySelector('div.order-header-actions');
@@ -86,22 +85,19 @@ const setPillToolTip = (pill, order) => {
     const date = order.expectedDelivery;
     pill.title = `Expected Delivery: ${date}`;
 }
-const setPillLink = (pill, order) => {
-    const url = order.url;
-    pill.href = url;
-}
-
+// const setPillLink = (pill, order) => {
+//     const url = order.carrierTrackingUrl;
+//     pill.href = url;
+// }
 const updatePillContent = (pill, order) => {
     setPillColor(pill, order);
     setPillIconAndMessage(pill, order);
     setPillToolTip(pill, order);
-    setPillLink(pill, order);
+    // setPillLink(pill, order);
 }
-
 const getCellElement = (document, orderId) => {
     return document.getElementById(`order${orderId}`).querySelector('.order_status_cell');
 }
-
 const updateCellContent = (cell, order) => {
     const statusColor = matchTrackingColor(order.status);
     const statusIcon = matchStatusIcon(order.status);
@@ -119,9 +115,8 @@ const updateCellContent = (cell, order) => {
     pill = cell.querySelector('.order_status_icon');
     setPillColor(pill, statusColor);
     setPillToolTip(pill, order.expectedDelivery);
-    setPillLink(pill, order.url);
+    // setPillLink(pill, order.url);
 }
-
 // All orders page info getters
 const getSortOrder = (sorted) => {
     switch (sorted.title.split(' ').pop()){
@@ -154,7 +149,6 @@ const getSort = (document) => {
             return false;
     }
 }
-
 // const getPageNumber = (document) => {
 //     var pageNumbers = document.querySelector('.pagination_page_links');
 //     return pageNumbers.querySelector('strong').innerText;
@@ -166,6 +160,7 @@ const getSort = (document) => {
 // Main function
 
 document.body.onload = async function () {
+    renderSyncButton(document);
     let location = checkLocation();
     // Connect to the background script
     port = chrome.runtime.connect({name: 'messagingPort'});
@@ -191,24 +186,12 @@ document.body.onload = async function () {
         })
 
     } else if (location === 'allOrders') {
-        // Get orderIds from page
-        let orderIds = getOrderIdsFromPage(document);
-        // console.log(orderIds); //debug
-
-        // Get sort info from page
-        let sort = getSort(document);
-        
-        // Send 'allOrders' to the service worker
-        port.postMessage({
-            title: 'allOrderIdsFromDiscogs', 
-            orderIds: orderIds, 
-            sort: sort, 
-        });
+        port.postMessage({title:'getAllOrdersOnPage', orderIds: orderIds})
         // console.log("Sent orderIds to background script"); //debug
 
         // Listen for a message from the background script
         port.onMessage.addListener(function(message) {
-            if (message.title === 'allOrdersFromStorage') {
+            if (message.title === 'allOrdersOnPage') {
                 const orders = message.orders;
 
                 for (const order of orders) {
@@ -218,4 +201,6 @@ document.body.onload = async function () {
             }
         })
     }
+
+    if 
 }
