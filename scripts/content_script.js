@@ -79,19 +79,16 @@ const setPillColor = (pill, order) => {
     pill.style.borderColor = color.dark;
 }
 const setPillIconAndMessage = (pill, order) => {
-    const status = order.status;
-    const date = order.expectedDelivery;
-    const icon = matchStatusIcon(status);
-
-    if (!status.toLowerCase().includes('delivered')) {
-        pill.innerHTML = `${icon} ${status}  |  Expected: ${date}`;
+    const icon = matchStatusIcon(order.status);
+    if (!order.status.toLowerCase().includes('delivered')) { //todo
+        pill.innerHTML = `${icon} ${order.message}  |  Expected: ${order.expectedDelivery}`;
         pill.style.color = 'black';
     } else {
-        pill.innerHTML = `${icon} ${status}`;
+        pill.innerHTML = `${icon} ${order.status}`;
     }
 }
 const setPillToolTip = (pill, order) => {
-    const date = order.expectedDelivery;
+    const date = order.expectedDelivery || 'Unknown';
     pill.title = `Expected Delivery: ${date}`;
 }
 // const setPillLink = (pill, order) => {
@@ -123,7 +120,7 @@ const updateCellContent = (cell, order) => {
             `;
     pill = cell.querySelector('.order_status_icon');
     setPillColor(pill, statusColor);
-    setPillToolTip(pill, order.expectedDelivery);
+    setPillToolTip(pill, order);
     // setPillLink(pill, order.url);
 }
 // All orders page info getters
@@ -221,8 +218,8 @@ document.body.onload = async function () {
         port.onMessage.addListener(function(message) {
             if (message.title === 'syncedOrders') {
                 console.log('Orders synced');
-                // reload the page
-                location.reload();
+                // reload page
+                window.location.reload();
             }
         })
     }

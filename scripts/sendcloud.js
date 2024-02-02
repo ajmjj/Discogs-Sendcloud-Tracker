@@ -1,4 +1,5 @@
-import { privateKey, publicKey } from "../secrets.js";
+import { sendcloudPrivateKey, sendcloudPublicKey } from "../secrets.js";
+import { normaliseTracking } from "./tracking.js";
 
 async function getSendcloudTracking (trackingNumber) {
     const baseUrl = 'https://panel.sendcloud.sc/api/v2/tracking/';
@@ -6,7 +7,7 @@ async function getSendcloudTracking (trackingNumber) {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${btoa(publicKey + ':' + privateKey)}`,
+            'Authorization': `Basic ${btoa(sendcloudPublicKey + ':' + sendcloudPrivateKey)}`,
         }
     }
     let response = await fetch(baseUrl + trackingNumber, options);
@@ -16,7 +17,7 @@ async function getSendcloudTracking (trackingNumber) {
     if (response.status === 200) {
         console.log('GET Sendcloud Tracking succeeded');
         const data = await response.json();
-        // console.log(data); //debug
+        console.log(data); //debug
 
         return data;
     }
@@ -37,24 +38,24 @@ async function getSendcloudTracking (trackingNumber) {
     }
 };
 
-function updateOrderTracking (order, trackingResult) {
-    order.carrier = order.carrier || trackingResult.carrier_code;
-    order.trackingNumber = order.trackingNumber || trackingResult.number;
-    order.status = trackingResult.statuses.pop().carrier_message;
-    order.expectedDelivery = trackingResult.expected_delivery_date;
-    order.carrierTrackingUrl = trackingResult.carrier_tracking_url;
-    return order;
-}
-
 function updateOrderStatus (order, trackingResult) {
     order.status = trackingResult.statuses.pop().carrier_message;
     order.expectedDelivery = trackingResult.expected_delivery_date;
     return order;
 }
 
+function updateSendcloudOrder (order, trackingResult) {
+    order.carrier = order.carrier || trackingResult.carrier_code;
+    order.trackingNumber = order.trackingNumber || trackingResult.number;
+    order.message = trackingResult.statuses.pop().carrier_message;
+    order.status = normaliseTracking(order.carrier, trackingResult.statuses.pop().parent_status);
+    order.expectedDelivery = trackingResult.expected_delivery_date;
+    order.carrierTrackingUrl = trackingResult.carrier_tracking_url;
+    return order;
+}
 
 export { 
     getSendcloudTracking, 
-    updateOrderTracking,
-    updateOrderStatus
+    updateOrderStatus,
+    updateSendcloudOrder
 };

@@ -21,6 +21,7 @@ async function getSingleOrderFromDiscogs (releaseId) {
             carrier : data.tracking.carrier,
             trackingNumber : data.tracking.number,
             status : null,
+            message: null,
             expectedDelivery : null,
             carrierTrackingUrl : null,
         }

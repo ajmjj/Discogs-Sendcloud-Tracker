@@ -17,8 +17,13 @@ async function getAllOrdersFromStorage () {
 }
 
 async function addSingleOrderToStorage (order) {
-    chrome.storage.sync.set({[order.orderId]: order}, function() {
+    const added = chrome.storage.sync.set({[order.orderId]: order}, function() {
     });
+    if (!added) {
+        console.log('Error adding order to storage');
+        return false;
+    }
+    console.log("Order added to storage:", updatedOrder); //debug
     return true; 
 }
 
@@ -44,6 +49,7 @@ async function getAllOrders(orderIds) {
                 orderId: orderId,
                 status: 'Not synced',
                 trackingNumber: "No tracking number",
+                message: "Not synced",
                 expectedDelivery: "Not synced",
                 trackingUrl: "Not synced",
             })
