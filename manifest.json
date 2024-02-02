@@ -1,0 +1,30 @@
+{
+    "name": "Discogs Sendcloud Tracker",
+    "description": "A lightweight Chrome extension that provides Sendcloud tracking information",
+    "version": "0.1.0",
+    "manifest_version": 3,
+    "background": {
+        "service_worker": "service_worker.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+          "matches": ["https://*.discogs.com/release/*", "https://www.discogs.com/sell/orders*", "https://www.discogs.com/sell/order/*"],
+          "js": ["scripts/content_script.js", "scripts/dom_manipulation.js"],
+          "run_at": "document_end"
+        }
+      ],
+    "host_permissions": [
+        "https://panel.sendcloud.sc/api/v2/tracking/*",
+        "https://www.discogs.com/sell/orders*"
+    ],
+    "web_accessible_resources": [
+        {
+            "matches": ["<all_urls>"],
+            "resources": ["/images/*"]
+        }
+    ],
+    "permissions": [
+        "storage"
+    ]
+}
